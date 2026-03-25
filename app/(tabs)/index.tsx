@@ -1,98 +1,174 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useEffect } from 'react';
+import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChevronRight, Folder as FolderIcon, Layers3, QrCode } from 'lucide-react-native';
+import { appTheme, elevatedCard } from '../../constants/appTheme';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useNotesStore } from '../../store/useNotesStore';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const labelStyle = {
+  color: appTheme.colors.muted,
+  fontSize: 12,
+  fontWeight: '700' as const,
+  letterSpacing: 1.2,
+  textTransform: 'uppercase' as const,
+};
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { user } = useAuthStore();
+  const { folders, loadingFolders, fetchFolders } = useNotesStore();
+  const router = useRouter();
+  const rootFolders = folders.filter((folder) => !folder.parent_id);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  useEffect(() => {
+    void fetchFolders();
+  }, [fetchFolders]);
+
+  const renderFolderCard = ({ item }: { item: (typeof rootFolders)[number] }) => {
+    const childCount = folders.filter((candidate) => candidate.parent_id === item.id).length;
+
+    return (
+      <Pressable
+        className="mb-4 rounded-[26px] px-5 py-5"
+        style={{
+          backgroundColor: appTheme.colors.surfaceRaised,
+          ...elevatedCard,
+        }}
+        onPress={() => router.push({ pathname: '/folder/[id]', params: { id: item.id } })}
+      >
+        <View className="flex-row items-center">
+          <View
+            className="mr-4 h-12 w-1 rounded-full"
+            style={{ backgroundColor: appTheme.colors.primary }}
+          />
+
+          <View
+            className="mr-4 h-12 w-12 items-center justify-center rounded-[16px]"
+            style={{ backgroundColor: appTheme.colors.surface }}
+          >
+            <FolderIcon size={22} color={appTheme.colors.primary} />
+          </View>
+
+          <View className="flex-1">
+            <Text style={{ color: appTheme.colors.text, fontSize: 18, fontWeight: '700' }}>{item.name}</Text>
+            <Text style={{ color: appTheme.colors.muted, fontSize: 14, marginTop: 4 }}>
+              {childCount > 0 ? `${childCount} subcarpetas` : 'Abrir carpeta'}
+            </Text>
+          </View>
+
+          <ChevronRight size={18} color={appTheme.colors.muted} />
+        </View>
+      </Pressable>
+    );
+  };
+
+  return (
+    <SafeAreaView className="flex-1" style={{ backgroundColor: appTheme.colors.background }}>
+      <FlatList
+        data={rootFolders}
+        keyExtractor={(item) => item.id}
+        renderItem={renderFolderCard}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 132 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loadingFolders}
+            onRefresh={() => {
+              void fetchFolders();
+            }}
+            tintColor={appTheme.colors.primary}
+          />
+        }
+        ListHeaderComponent={
+          <View className="mb-10">
+            <Text style={labelStyle}>Biblioteca personal</Text>
+
+            <View className="mt-4 pl-8">
+              <Text
+                style={{
+                  color: appTheme.colors.text,
+                  fontSize: 34,
+                  lineHeight: 42,
+                  fontWeight: '600',
+                  letterSpacing: -0.6,
+                }}
+              >
+                {user?.email?.split('@')[0] || 'Tu espacio'}{'\n'}ordenado como documentos.
+              </Text>
+            </View>
+
+            <View
+              className="mt-8 rounded-[30px] px-6 py-6"
+              style={{ backgroundColor: appTheme.colors.surface }}
+            >
+              <Text style={labelStyle}>Resumen</Text>
+
+              <View className="mt-5 flex-row gap-3">
+                <View
+                  className="flex-1 rounded-[24px] px-5 py-5"
+                  style={{ backgroundColor: appTheme.colors.surfaceRaised, ...elevatedCard }}
+                >
+                  <View className="flex-row items-center">
+                    <Layers3 size={18} color={appTheme.colors.primary} />
+                    <Text style={{ color: appTheme.colors.text, fontSize: 14, fontWeight: '600', marginLeft: 8 }}>
+                      Carpetas raiz
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      color: appTheme.colors.text,
+                      fontSize: 34,
+                      fontWeight: '700',
+                      marginTop: 14,
+                    }}
+                  >
+                    {rootFolders.length}
+                  </Text>
+                </View>
+
+                <Pressable
+                  className="flex-1 rounded-[24px] px-5 py-5"
+                  style={{ backgroundColor: appTheme.colors.primary, ...elevatedCard }}
+                  onPress={() => router.push('/scanner')}
+                >
+                  <QrCode size={20} color="#ffffff" />
+                  <Text style={{ color: '#ffffff', fontSize: 20, fontWeight: '700', marginTop: 14 }}>
+                    Escanear QR
+                  </Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.82)', fontSize: 13, marginTop: 6, lineHeight: 20 }}>
+                    Autoriza la web desde tu celular
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <View className="mt-8 flex-row items-end justify-between">
+              <View>
+                <Text style={labelStyle}>Carpetas</Text>
+                <Text style={{ color: appTheme.colors.text, fontSize: 24, fontWeight: '700', marginTop: 8 }}>
+                  Coleccion principal
+                </Text>
+              </View>
+              <Text style={{ color: appTheme.colors.muted, fontSize: 14 }}>{folders.length} en total</Text>
+            </View>
+          </View>
+        }
+        ListEmptyComponent={
+          <View
+            className="rounded-[28px] px-8 py-10"
+            style={{ backgroundColor: appTheme.colors.surfaceRaised, ...elevatedCard }}
+          >
+            <FolderIcon size={42} color={appTheme.colors.primary} />
+            <Text style={{ color: appTheme.colors.text, fontSize: 24, fontWeight: '700', marginTop: 18 }}>
+              Aun no hay carpetas raiz
+            </Text>
+            <Text style={{ color: appTheme.colors.muted, fontSize: 15, lineHeight: 24, marginTop: 10 }}>
+              Crea carpetas en la web y apareceran aqui con el mismo lenguaje visual de tu biblioteca.
+            </Text>
+          </View>
+        }
+      />
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});

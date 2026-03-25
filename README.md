@@ -14,7 +14,7 @@ Ofrece lectura de notas y autorización de sesiones web mediante código QR de m
 1. Clona el repositorio y navega hasta esta carpeta.
 2. Asegúrate de tener las variables en `.env` (el archivo ya está creado con los valores necesarios listos, debes ingresar el ANON KEY de Supabase en caso que se haya borrado):
 ```
-EXPO_PUBLIC_SUPABASE_URL=https://toijzwflmckhaoanigss.supabase.co
+EXPO_PUBLIC_SUPABASE_URL=efefffesfef
 EXPO_PUBLIC_SUPABASE_ANON_KEY=TU_ANON_KEY
 ```
 3. Instala las dependencias:

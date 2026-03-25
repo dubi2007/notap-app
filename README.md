@@ -1,50 +1,63 @@
-# Welcome to your Expo app 👋
+# Notas App - Mobile Client
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicación móvil construida con Expo y React Native conectada al backend de Notas en Supabase.
+Ofrece lectura de notas y autorización de sesiones web mediante código QR de manera segura.
 
-## Get started
+## Requisitos
+- Node.js >= 18
+- npm o pnpm
+- Cuenta en Expo (opcional para desarrollo local, requerida para builds de EAS)
+- Expo Go instalado en tu dispositivo físico o un Emulador/Simulador.
 
-1. Install dependencies
+## Correr el Proyecto Localmente
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
+1. Clona el repositorio y navega hasta esta carpeta.
+2. Asegúrate de tener las variables en `.env` (el archivo ya está creado con los valores necesarios listos, debes ingresar el ANON KEY de Supabase en caso que se haya borrado):
+```
+EXPO_PUBLIC_SUPABASE_URL=https://toijzwflmckhaoanigss.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=TU_ANON_KEY
+```
+3. Instala las dependencias:
 ```bash
-npm run reset-project
+npm install
+```
+4. Inicia el servidor de desarrollo de Expo:
+```bash
+npx expo start
+```
+5. Escanea el código QR que aparece en la terminal usando la aplicación **Expo Go** en Android (o la cámara nativa en iOS) o presiona `a` para abrir en el emulador de Android.
+
+## Hacer el Build de Producción (APK/AAB) con EAS (Expo Application Services)
+
+Para generar el `.apk` (para instalar en tu celular directamente) o `.aab` (para subir a Google Play) en la nube utilizando los servidores gratuitos de Expo:
+
+1. Instala el CLI de EAS globalmente (si no lo tienes):
+```bash
+npm install -g eas-cli
+```
+2. Inicia sesión en tu cuenta de Expo:
+```bash
+eas login
+```
+3. Configura el proyecto en los servidores de EAS (esto enlazará el ID de tu proyecto):
+```bash
+eas build:configure
+```
+4. Para generar un archivo instalable localmente **APK** para Android:
+```bash
+eas build -p android --profile preview
+```
+*(Al finalizar, EAS te dará un enlace para descargar el .apk e instalarlo en tu dispositivo).*
+
+5. Para compilar el archivo **AAB** de producción (Google Play Store):
+```bash
+eas build -p android --profile production
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Arquitectura
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **Framework**: React Native con Expo (SDK 52+), manejado con **Expo Router** para la navegación.
+- **Estado**: Zustand para la sesión de `auth` y la gestión `notes`/`folders`.
+- **Autenticación**: Email/Contraseña y Enlace Mágico (OTP) usando `supabase-js`, obteniendo el token OTP desde el API del servidor en Next.js.
+- **Scanner**: Usa `expo-camera` para escanear la URL del código QR, extrayendo el `sessionId` y llamando al endpoint en Next.js con el Token nativo activo.
+- **Estilos**: NativeWind (Tailwind CSS) + Tema oscuro idéntico a la web.
